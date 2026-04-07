@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "Link": {
+      "title": "Link",
+      "description": "A saved link with metadata and tags.",
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL of the saved link."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the link."
+        },
+        "tags": {
+          "type": "array",
+          "description": "Array of tags associated with the link.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "archived": {
+          "type": "boolean",
+          "description": "Whether the link is archived."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who saved the link."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the link was saved."
+        }
+      },
+      "required": ["url", "title", "tags", "archived", "userId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/links/{linkId}": {
+      "schema": {
+        "$ref": "#/entities/Link"
+      },
+      "description": "Collection of saved links."
+    }
+  }
+}

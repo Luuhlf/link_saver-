@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: links
+    // Document ID: auto-generated
+    // Fields:
+    //   - url: string (required, max 2000 chars)
+    //   - title: string (required, max 500 chars)
+    //   - tags: list of strings (required, max 20 tags)
+    //   - archived: boolean (required)
+    //   - userId: string (required, immutable, must match auth.uid)
+    //   - createdAt: timestamp (required, immutable)
+    //
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidString(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+             request.resource.data[field].size() >= minLen &&
+             request.resource.data[field].size() <= maxLen;
+    }
+
+    function isValidLink(data) {
+      return hasOnlyAllowedFields(['url', 'title', 'tags', 'archived', 'userId', 'createdAt']) &&
+             hasRequiredFields(['url', 'title', 'tags', 'archived', 'userId', 'createdAt']) &&
+             isValidString('url', 1, 2000) &&
+             isValidString('title', 0, 500) &&
+             request.resource.data.tags is list &&
+             request.resource.data.tags.size() <= 20 &&
+             request.resource.data.archived is bool &&
+             request.resource.data.userId == request.auth.uid &&
+             request.resource.data.createdAt is timestamp;
+    }
+
+    match /links/{linkId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidLink(request.resource.data);
+      allow update: if isDocOwner() && 
+                    isValidLink(request.resource.data) &&
+                    request.resource.data.userId == resource.data.userId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isDocOwner();
+    }
+  }
+}
