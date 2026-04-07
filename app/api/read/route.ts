@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { JSDOM } from 'jsdom';
+import { DOMParser } from 'linkedom';
 import { Readability } from '@mozilla/readability';
 import sanitizeHtml from 'sanitize-html';
 
@@ -29,13 +29,14 @@ export async function GET(request: Request) {
     }
 
     const html = await response.text();
-    const doc = new JSDOM(html, { url });
-    const reader = new Readability(doc.window.document);
+    const document = new DOMParser().parseFromString(html, 'text/html');
+
+    const reader = new Readability(document as any);
     const article = reader.parse();
 
     if (!article || !article.content || article.content.trim().length < 50) {
       return NextResponse.json({
-        title: article?.title || doc.window.document.title || 'Título Desconhecido',
+        title: article?.title || document.title || 'Título Desconhecido',
         content: `
           <blockquote>
             <p><strong>⚠️ Não foi possível extrair o texto desta página.</strong></p>

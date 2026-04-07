@@ -170,11 +170,19 @@ export function MainApp() {
 
     try {
       const res = await fetch(`/api/read?url=${encodeURIComponent(url)}`);
-      const data = await res.json();
-
+      
       if (!res.ok) {
-        throw new Error(data.error || "Failed to load content");
+        let errorMessage = "Failed to load content";
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = `Server error (${res.status}). The server might be overloaded or the URL is invalid.`;
+        }
+        throw new Error(errorMessage);
       }
+
+      const data = await res.json();
 
       setReaderContent({
         title: data.title,
